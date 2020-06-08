@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Horaires TAN</title>
+  <style>
+  #demo {
+	  font-family: 'Helvetica', Arial, sans-serif;
+	}
+	a {
+	  text-decoration: none;
+	  color: #f66;
+	}
+	li {
+	  line-height: 1.5em;
+	  margin-bottom: 20px;
+	}
+	.author, .date {
+	  font-weight: bold;
+	}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  </head>
+  <body>
+  	<div id="demo">
+        
+        
+            <label> Recherche Arret :</label>
+            <input type="text" v-model="recherche">
+            <ul v-if="loaded">
+                <pre>{{arrets}}</pre>
+                <li v-for="arret in arrets" :key="index">{{ arret }}</li>
+            </ul>
+            <button type="submit">Horaires</button>
+        
+    </div>
+    
+  	
+  	<script>
+  	
+
+
+		var demo = new Vue({
+
+		  el: '#demo',
+
+		  data: {
+		    recherche: null,
+        arrets:[],
+        apiURL:'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_tan-arrets&q=&rows=3637',
+        loaded:false,
+		  },
+
+		  created: function(){
+        this.fetchData();
+        // console.log(this.arrets)
+		  },
+
+		//   watch: {
+		    
+		//   },
+
+		 
+
+		  methods: {
+		    fetchData: function(){
+          this.recherche;
+		      var self = this
+		      
+
+			  var myInit = { 
+			    method: 'GET',
+          mode: 'cors',
+          cache: 'default' };
+
+		      fetch(self.apiURL)
+				.then(response => response.json())
+				.then(function(data) {
+					//  console.log(data);
+                    var resUnik=[];
+                        for(var i=0;i<data.records.length;i++){
+                            var arret=data.records[i];
+                            var pris=false;
+                            if(resUnik.length>0){
+                                for(var i=0;i<resUnik.length;i++){
+                                     if (arret.fields.stop_name===arretEnr.fields.stop_name){
+                                         pris=true;
+                                         break;
+                                     }
+                                }
+                            }
+                            if (pris)break;
+                            resUnik[arret.fields.parent_station]=arret.fields.stop_name;
+                        }
+                    self.arrets=resUnik;
+                    console.log(self.arrets);
+                    self.loaded=true;
+                    
+				});
+                
+                		
+			}
+    }
+      
+		})
+  	</script>
+  </body>
+</html>
