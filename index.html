@@ -51,8 +51,8 @@
 
 		  data: {
 		    recherche: null,
-        arrets:{},
-        apiURL:'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_tan-arrets&q=&rows=50',
+        arrets:[],
+        apiURL:'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_tan-arrets&q=&rows=3637',
         loaded:false,
 		  },
 
@@ -82,15 +82,26 @@
 				.then(response => response.json())
 				.then(function(data) {
 					//  console.log(data);
-                    var resUnik={};
+          var listeArrets=[];
                         for(var i=0;i<data.records.length;i++){
                             var arret=data.records[i];
-                            var id='';
-                            self.arrets = data.records.map(i => [i.fields.stop_id,i.fields.stop_name])
-                            self.arrets = [...new Set(self.arrets)]  
+                            var pris=false;
+                            
+                            for(j=0;j<listeArrets.length;j++){
+                              
+                              if(listeArrets[j][1]===arret.fields.stop_name){
+                                console.log(listeArrets[j]);
+                                pris=true;
+                              }
+                            }
+                            if(pris===false){
+                              listeArrets.push([arret.fields.stop_id,arret.fields.stop_name]);
+                            }
+                            
                         }
 
-                    console.log(self.arrets);
+                    console.log(listeArrets);
+                    self.arrets=listeArrets;
                     self.loaded=true;
                     
           });
@@ -98,20 +109,23 @@
                       
         },
         getHoraires:function(arret){
-          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
-          var ajd=new Date();
-          var myInit = { 
-			    method: 'GET',
-          mode: 'cors',
-          cache: 'default' };
+          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/PIRA1/27/1";
+
           var myHeaders = new Headers({
-        //     'Access-Control-Expose-Headers': 'ETag, Link, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval',
-          // 'Access-Control-Max-Age': 86400,
-          // 'Access-Control-Allow-Headers': 'Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Accept-Encoding, X-GitHub-OTP, X-Requested-With, User-Agent',
-          // 'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE',
-          // 'Access-Control-Allow-Origin': '*'
+        
+           'Access-Control-Allow-Origin': '*'
         });
-          fetch(urlAPI+arret+"/"+ajd.getDay()+"/"+ajd.getMonth(),{mode:'cors'})
+          const headers = new Headers();
+          headers.append("Access-Control-Allow-Origin", "*");
+
+          const fetchOptions = { method: 'GET',
+                         headers: myHeaders,
+                         mode: 'no-cors',
+                         cache: 'default' };
+          console.log(urlAPI+arret);
+          fetch(urlAPI,fetchOptions)
+          
+          
 				  .then(response => response.json())
 				  .then(function(data) {
             console.log(data);
