@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Horaires TAN</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <style>
   #demo {
 	  font-family: 'Helvetica', Arial, sans-serif;
@@ -12,6 +13,9 @@
 	  text-decoration: none;
 	  color: #f66;
 	}
+  ul{
+    list-style-type: none;
+  }
 	li {
 	  line-height: 1.5em;
 	  margin-bottom: 20px;
@@ -25,14 +29,14 @@
   <body>
   	<div id="demo">
         
-        
-            <label> Recherche Arret :</label>
-            <input type="text" v-model="recherche">
-            <ul v-if="loaded">
-                <pre>{{arrets}}</pre>
-                <li v-for="arret in arrets" :key="index">{{ arret }}</li>
+            <div class=form-group>
+              <label> Recherche Arret :</label>
+              <input type="text" class="form-control" v-model="recherche">
+            </div>
+            <ul v-if="loaded&&recherche" class="p-0 d-flex flex-column align-items-stretch">
+                
+                <li v-for="arret in filteredArrets" class="d-flex flex-column align-items-stretch"><button @click="getHoraires(arret[0])" class= "btn btn-primary" >{{ arret[1] }}</button></li>
             </ul>
-            <button type="submit">Horaires</button>
         
     </div>
     
@@ -47,8 +51,8 @@
 
 		  data: {
 		    recherche: null,
-        arrets:[],
-        apiURL:'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_tan-arrets&q=&rows=3637',
+        arrets:{},
+        apiURL:'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_tan-arrets&q=&rows=50',
         loaded:false,
 		  },
 
@@ -66,7 +70,7 @@
 		  methods: {
 		    fetchData: function(){
           this.recherche;
-		      var self = this
+		      var self = this;
 		      
 
 			  var myInit = { 
@@ -78,29 +82,64 @@
 				.then(response => response.json())
 				.then(function(data) {
 					//  console.log(data);
-                    var resUnik=[];
+                    var resUnik={};
                         for(var i=0;i<data.records.length;i++){
                             var arret=data.records[i];
-                            var pris=false;
-                            if(resUnik.length>0){
-                                for(var i=0;i<resUnik.length;i++){
-                                     if (arret.fields.stop_name===arretEnr.fields.stop_name){
-                                         pris=true;
-                                         break;
-                                     }
-                                }
-                            }
-                            if (pris)break;
-                            resUnik[arret.fields.parent_station]=arret.fields.stop_name;
+                            var id='';
+                            self.arrets = data.records.map(i => [i.fields.stop_id,i.fields.stop_name])
+                            self.arrets = [...new Set(self.arrets)]  
                         }
-                    self.arrets=resUnik;
+
                     console.log(self.arrets);
                     self.loaded=true;
                     
-				});
+          });
+                  
+                      
+        },
+        getHoraires:function(arret){
+          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
+          var ajd=new Date();
+          var myInit = { 
+			    method: 'GET',
+          mode: 'cors',
+          cache: 'default' };
+          var myHeaders = new Headers({
+        //     'Access-Control-Expose-Headers': 'ETag, Link, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval',
+          // 'Access-Control-Max-Age': 86400,
+          // 'Access-Control-Allow-Headers': 'Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Accept-Encoding, X-GitHub-OTP, X-Requested-With, User-Agent',
+          // 'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE',
+          // 'Access-Control-Allow-Origin': '*'
+        });
+          fetch(urlAPI+arret+"/"+ajd.getDay()+"/"+ajd.getMonth(),{mode:'cors'})
+				  .then(response => response.json())
+				  .then(function(data) {
+            console.log(data);
+          });
+          
+        },
+      },
+    computed:{
+      filteredArrets: function () {
+            var arrets_array = this.arrets,
+                search = this.recherche;
+
+            if(!search){
+                return {};
+            }
+            search = search.trim().toLowerCase();
+            
+            arrets_array = arrets_array.filter(function(item){
                 
-                		
-			}
+
+                if(item[1]!=null && item[1].toLowerCase().indexOf(search) !== -1){
+                    
+                        return item;
+                    
+                }
+            })
+            return arrets_array;;
+        }
     }
       
 		})
