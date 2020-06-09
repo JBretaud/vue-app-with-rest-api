@@ -36,7 +36,7 @@
               <input type="text" class="form-control" v-model="recherche">
             </div>
             <ul v-if="loaded&&recherche&&!displayChoixLigne" class="p-0 d-flex flex-column align-items-stretch">
-                <li v-for="arret in filteredArrets" class="d-flex flex-column align-items-stretch"><button @click="setLignes(arret.ligne)" class= "btn btn-primary" >{{ arret.libelle }}</button></li>
+                <li v-for="arret in filteredArrets" class="d-flex flex-column align-items-stretch"><button @click="setLignes(arret)" class= "btn btn-primary" >{{ arret.libelle }}</button></li>
             </ul>
             <div v-if="displayChoixLigne" class="container">
               <div class="row">
@@ -44,8 +44,18 @@
                   Ligne(s):
                 </h2>
               </div>
-              <div class="row">
-                <div v-for="ligne in ListeLignes"  class="card" @click="getHoraires(arret.ligne.numLigne)" style="width:18rem;cursor:pointer;" >{{ ligne.numLigne }}</div>
+              <div class="row d-flex flex-row justify-content-center">
+                <div v-for="ligne in ListeLignes"  class="card d-flex flex-row justify-content-center align-items-center" style="width:18rem;cursor:pointer;" >
+                  {{ ligne.numLigne }}
+                  <div>
+                    <div v-for="">
+
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+              <div class="row d-flex flex-row justify-content-center">
                 <button class="btn btn-primary" @click="toggleRecherche">Retour à la recherche</button>
               </div>
               
@@ -99,7 +109,7 @@
 					
           self.arrets = data.map(i => i);
           self.arrets = [...new Set(self.arrets)];
-          console.log(self.arrets);
+          // console.log(self.arrets);
           self.loaded=true;
             
           });
@@ -110,41 +120,38 @@
           this.displayChoixLigne=!this.displayChoixLigne;
 
         },
-        setLignes: function(lignes){
-          
-          this.ListeLignes=lignes;
-          console.log(this.ListeLignes);
-          this.displayChoixLigne=true;
-          console.log(this.displayChoixLigne);   
-        },
-        getHoraires:function(arret){
+        setLignes: function(arret){
           console.log(arret);
-          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
-
-          var myHeaders = new Headers({
-        
-           'Access-Control-Allow-Origin': '*'
-        });
-          const headers = new Headers();
-          headers.append("Access-Control-Allow-Origin", "*");
-
-          const fetchOptions = { method: 'GET',
-                         headers: myHeaders,
-                         mode: 'no-cors',
-                         cache: 'default' };
+          this.ListeLignes=arret.lignes;
+          // console.log(this.ListeLignes);
+          this.displayChoixLigne=true;
           
-            console.log(urlAPI+arret.libelle+"/"+numLigne+"/1");
-            console.log(urlAPI+arret.libelle+"/"+numLigne+"/2");
-            fetch(urlAPI,fetchOptions)
-            
-            
+          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
+          for(j=0;j<arret.ligne.length;j++){
+            var numLigne=arret.ligne[j].numLigne;
+            try{fetch(urlAPI+arret.libelle+"/"+numLigne+"/1",fetchOptions)
+          
+          
             .then(response => response.json())
             .then(function(data) {
-              console.log(data);
+              console.log(data.ligne.directionSens1);
+              console.log(data.ligne.directionSens2);
             });
-          
-          
+            }catch(Exception){
+              fetch(urlAPI+arret.libelle+"/"+numLigne+"/2",fetchOptions)
+            
+            
+              .then(response => response.json())
+              .then(function(data) {
+                console.log(data.ligne.directionSens1);
+                console.log(data.ligne.directionSens2);
+              });
+            }
+              
+            }
         },
+       
+        
       },
     computed:{
       filteredArrets: function () {
