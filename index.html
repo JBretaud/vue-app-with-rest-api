@@ -28,15 +28,28 @@
   </head>
   <body>
   	<div id="demo">
-        
-            <div class=form-group>
+            <div v-if="!loaded" class="w-100 d-flex flex-row justify-content-center align-items-center" style="height:100vh">
+              <img src="loading.gif">
+            </div>
+            <div v-if="loaded&&!displayChoixLigne" class=form-group>
               <label> Recherche Arret :</label>
               <input type="text" class="form-control" v-model="recherche">
             </div>
-            <ul v-if="loaded&&recherche" class="p-0 d-flex flex-column align-items-stretch">
-                
-                <li v-for="arret in filteredArrets" class="d-flex flex-column align-items-stretch"><button @click="getHoraires(arret[0])" class= "btn btn-primary" >{{ arret[1] }}</button></li>
+            <ul v-if="loaded&&recherche&&!displayChoixLigne" class="p-0 d-flex flex-column align-items-stretch">
+                <li v-for="arret in filteredArrets" class="d-flex flex-column align-items-stretch"><button @click="setLignes(arret.ligne)" class= "btn btn-primary" >{{ arret.libelle }}</button></li>
             </ul>
+            <div v-if="displayChoixLigne" class="container">
+              <div class="row">
+                <h2>
+                  Ligne(s):
+                </h2>
+              </div>
+              <div class="row">
+                <div v-for="ligne in ListeLignes"  class="card" @click="getHoraires(arret.ligne.numLigne)" style="width:18rem;cursor:pointer;" >{{ ligne.numLigne }}</div>
+                <button class="btn btn-primary" @click="toggleRecherche">Retour à la recherche</button>
+              </div>
+              
+            </div>
         
     </div>
     
@@ -52,8 +65,10 @@
 		  data: {
 		    recherche: null,
         arrets:[],
-        apiURL:'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_tan-arrets&q=&rows=3637',
+        apiURL:'http://http://open_preprod.tan.fr/ewp/arrets.json',
         loaded:false,
+        ListeLignes:[],
+        displayChoixLigne:false,
 		  },
 
 		  created: function(){
@@ -78,38 +93,33 @@
           mode: 'cors',
           cache: 'default' };
 
-		      fetch(self.apiURL)
+		      fetch('http://open_preprod.tan.fr/ewp/arrets.json')
 				.then(response => response.json())
 				.then(function(data) {
-					//  console.log(data);
-          var listeArrets=[];
-                        for(var i=0;i<data.records.length;i++){
-                            var arret=data.records[i];
-                            var pris=false;
-                            
-                            for(j=0;j<listeArrets.length;j++){
-                              
-                              if(listeArrets[j][1]===arret.fields.stop_name){
-                                console.log(listeArrets[j]);
-                                pris=true;
-                              }
-                            }
-                            if(pris===false){
-                              listeArrets.push([arret.fields.stop_id,arret.fields.stop_name]);
-                            }
-                            
-                        }
-
-                    console.log(listeArrets);
-                    self.arrets=listeArrets;
-                    self.loaded=true;
-                    
+					
+          self.arrets = data.map(i => i);
+          self.arrets = [...new Set(self.arrets)];
+          console.log(self.arrets);
+          self.loaded=true;
+            
           });
                   
                       
         },
+        toggleRecherche:function(){
+          this.displayChoixLigne=!this.displayChoixLigne;
+
+        },
+        setLignes: function(lignes){
+          
+          this.ListeLignes=lignes;
+          console.log(this.ListeLignes);
+          this.displayChoixLigne=true;
+          console.log(this.displayChoixLigne);   
+        },
         getHoraires:function(arret){
-          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/PIRA1/27/1";
+          console.log(arret);
+          var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
 
           var myHeaders = new Headers({
         
@@ -122,14 +132,17 @@
                          headers: myHeaders,
                          mode: 'no-cors',
                          cache: 'default' };
-          console.log(urlAPI+arret);
-          fetch(urlAPI,fetchOptions)
           
+            console.log(urlAPI+arret.libelle+"/"+numLigne+"/1");
+            console.log(urlAPI+arret.libelle+"/"+numLigne+"/2");
+            fetch(urlAPI,fetchOptions)
+            
+            
+            .then(response => response.json())
+            .then(function(data) {
+              console.log(data);
+            });
           
-				  .then(response => response.json())
-				  .then(function(data) {
-            console.log(data);
-          });
           
         },
       },
@@ -143,13 +156,11 @@
             }
             search = search.trim().toLowerCase();
             
-            arrets_array = arrets_array.filter(function(item){
+            arrets_array = arrets_array.filter(function(arret){
                 
 
-                if(item[1]!=null && item[1].toLowerCase().indexOf(search) !== -1){
-                    
-                        return item;
-                    
+                if(arret.libelle!=null && arret.libelle.toLowerCase().indexOf(search) !== -1){
+                        return arret;                    
                 }
             })
             return arrets_array;;
