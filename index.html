@@ -127,6 +127,10 @@
           this.displayChoixLigne=true;
           
           var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
+          const fetchOptions = { method: 'GET',
+                         headers: myHeaders,
+                         mode: 'no-cors',
+                         cache: 'default' };
           for(j=0;j<arret.ligne.length;j++){
             var numLigne=arret.ligne[j].numLigne;
             try{fetch(urlAPI+arret.libelle+"/"+numLigne+"/1",fetchOptions)
