@@ -127,15 +127,15 @@
           this.displayChoixLigne=true;
           
           var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
+          var myHeaders = new Headers({'Access-Control-Allow-Origin': '*'});
           const fetchOptions = { method: 'GET',
                          headers: myHeaders,
                          mode: 'no-cors',
                          cache: 'default' };
           for(j=0;j<arret.ligne.length;j++){
             var numLigne=arret.ligne[j].numLigne;
-            try{fetch(urlAPI+arret.libelle+"/"+numLigne+"/1",fetchOptions)
-          
-          
+            console.log(urlAPI+arret.codeLieu+"/"+numLigne+"/1");
+            try{fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/1",fetchOptions)
             .then(response => response.json())
             .then(function(data) {
               console.log(data.ligne.directionSens1);
@@ -143,8 +143,6 @@
             });
             }catch(Exception){
               fetch(urlAPI+arret.libelle+"/"+numLigne+"/2",fetchOptions)
-            
-            
               .then(response => response.json())
               .then(function(data) {
                 console.log(data.ligne.directionSens1);
