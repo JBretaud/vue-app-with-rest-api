@@ -38,18 +38,20 @@
             <ul v-if="loaded&&recherche&&!displayChoixLigne" class="p-0 d-flex flex-column align-items-stretch">
                 <li v-for="arret in filteredArrets" class="d-flex flex-column align-items-stretch"><button @click="setLignes(arret)" class= "btn btn-primary" >{{ arret.libelle }}</button></li>
             </ul>
+            
             <div v-if="displayChoixLigne" class="container">
-              <div class="row">
+              <div class="row d-flex flex-column align-items-center">
                 <h2>
-                  Ligne(s):
+                  Prochains départs:
                 </h2>
               </div>
-              <div class="row d-flex flex-row justify-content-center">
-                <div v-for="ligne in ListeLignes"  class="card d-flex flex-row justify-content-center align-items-center" style="width:18rem;cursor:pointer;" >
+              <div v-if="lignesRdy" class="row d-flex flex-row justify-content-center">
+                <div v-for="ligne in ListeLignes"  class="card d-flex flex-column justify-content-center align-items-center" style="width:18rem;cursor:pointer;" >
                   {{ ligne.numLigne }}
-                  <div>
-                    <div v-for="">
-
+                  <div class="d-flex flex-column">
+                    <div v-for="terminus in ligne.terminus" v-if="terminus.nom!=chosenStop" class="text-center" >
+                      <span class="text-nowrap">Vers : {{ terminus.nom }}</span> <span class="text-nowrap">à {{ terminus.prochDepart }}</span>
+                      <span v-if="!terminus.prochDepart">--h--</span>
                     </div>
                   </div>
                 </div>
@@ -79,6 +81,8 @@
         loaded:false,
         ListeLignes:[],
         displayChoixLigne:false,
+        lignesRdy:false,
+        chosenStop:'',
 		  },
 
 		  created: function(){
@@ -121,36 +125,63 @@
 
         },
         setLignes: function(arret){
+          this.chosenStop=arret.libelle;
           console.log(arret);
-          this.ListeLignes=arret.lignes;
+          this.ListeLignes=arret.ligne;
           // console.log(this.ListeLignes);
           this.displayChoixLigne=true;
+          self=this;
           
           var urlAPI="http://open.tan.fr/ewp/horairesarret.json/";
-          var myHeaders = new Headers({'Access-Control-Allow-Origin': '*'});
-          const fetchOptions = { method: 'GET',
-                         headers: myHeaders,
-                         mode: 'no-cors',
-                         cache: 'default' };
+          // var myHeaders = new Headers({'Access-Control-Allow-Origin': '*'});
+          // const fetchOptions = { method: 'GET',
+          //               //  headers: myHeaders,
+          //               //  mode: 'cors',
+          //                cache: 'default' };
+          let promises=[];
           for(j=0;j<arret.ligne.length;j++){
+            let term2='';
             var numLigne=arret.ligne[j].numLigne;
-            console.log(urlAPI+arret.codeLieu+"/"+numLigne+"/1");
-            try{fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/1",fetchOptions)
-            .then(response => response.json())
-            .then(function(data) {
-              console.log(data.ligne.directionSens1);
-              console.log(data.ligne.directionSens2);
-            });
-            }catch(Exception){
-              fetch(urlAPI+arret.libelle+"/"+numLigne+"/2",fetchOptions)
-              .then(response => response.json())
-              .then(function(data) {
-                console.log(data.ligne.directionSens1);
-                console.log(data.ligne.directionSens2);
-              });
+            promises[j]=[];
+
+
+            let result = fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/1")
+            
+            promises[j].push(result);
+
+            let result2 = fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/2")
+            
+            promises[j].push(result2);
+          }
+          terminus=[];
+          Promise.all(promises)
+          
+          .then((data)=>{
+            console.log(data);
+            for(j=0;j<data.length;j++){
+              for(k=0;k<data[j].length;k++){
+                const parsedData=data[j][k].json();
+                terminus[k]={};
+                console.log(data[0][0]);
+                console.log(parsedData);
+                terminus[k]['nom']=parsedData.arret.libelle;
+                terminus[k]['prochDepart']=parsedData.prochainsHoraires[0].heure+parsedData.prochainsHoraires[0].passages[0];
+                
+              }
             }
-              
+            for(i=0;i<self.ListeLignes.length;i++){
+              self.ListeLignes[i]['terminus']=terminus[i];
             }
+            
+            this.lignesRdy=true;
+          });
+            
+            
+            
+          
+          
+          
+          
         },
        
         
