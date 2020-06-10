@@ -49,7 +49,7 @@
                 <div v-for="ligne in ListeLignes"  class="card d-flex flex-column justify-content-center align-items-center" style="width:18rem;cursor:pointer;" >
                   {{ ligne.numLigne }}
                   <div class="d-flex flex-column">
-                    <div v-for="terminus in ligne.terminus" v-if="terminus.nom!=chosenStop" class="text-center" >
+                    <div v-for="terminus in ligne.terminus" v-if="terminus !== undefined && terminus.nom !== undefined && terminus.nom!=chosenStop" class="text-center" >
                       <span class="text-nowrap">Vers : {{ terminus.nom }}</span> <span class="text-nowrap">à {{ terminus.prochDepart }}</span>
                       <span v-if="!terminus.prochDepart">--h--</span>
                     </div>
@@ -124,9 +124,9 @@
           this.displayChoixLigne=!this.displayChoixLigne;
 
         },
-        setLignes: function(arret){
+        setLignes: async function(arret){
           this.chosenStop=arret.libelle;
-          console.log(arret);
+          // console.log(arret);
           this.ListeLignes=arret.ligne;
           // console.log(this.ListeLignes);
           this.displayChoixLigne=true;
@@ -142,46 +142,39 @@
           for(j=0;j<arret.ligne.length;j++){
             let term2='';
             var numLigne=arret.ligne[j].numLigne;
-            promises[j]=[];
-
-
-            let result = fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/1")
-            
-            promises[j].push(result);
-
-            let result2 = fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/2")
-            
-            promises[j].push(result2);
-          }
-          terminus=[];
-          Promise.all(promises)
-          
-          .then((data)=>{
-            console.log(data);
-            for(j=0;j<data.length;j++){
-              for(k=0;k<data[j].length;k++){
-                const parsedData=data[j][k].json();
-                terminus[k]={};
-                console.log(data[0][0]);
-                console.log(parsedData);
-                terminus[k]['nom']=parsedData.arret.libelle;
-                terminus[k]['prochDepart']=parsedData.prochainsHoraires[0].heure+parsedData.prochainsHoraires[0].passages[0];
-                
+            self.ListeLignes[j]['terminus']=[]
+            for(k=1;k<3;k++){
+              
+              
+              self.ListeLignes[j]['terminus'][k-1] = await fetch(urlAPI+arret.codeLieu+"/"+numLigne+"/"+k)
+                .then(data => data.json())
+                .then(data => {
+                  
+                  const terminus = {}
+                  if(data.prochainsHoraires != undefined){
+                    try{
+                      if(k===1){
+                        terminus.nom=data.ligne.directionSens1;
+                      }else{
+                        terminus.nom=data.ligne.directionSens2;
+                      }
+                      
+                      terminus.prochDepart=data.prochainsHoraires[0].heure+data.prochainsHoraires[0].passages[0];
+                      console.log(terminus);
+                    }catch(Esception){
+                      console.log(Exception);
+                    }
+                    
+                  }
+                  return terminus;
+                  
+                })
+                .catch(Exception=>console.log(Exception));
+              
               }
-            }
-            for(i=0;i<self.ListeLignes.length;i++){
-              self.ListeLignes[i]['terminus']=terminus[i];
-            }
-            
-            this.lignesRdy=true;
-          });
-            
-            
-            
-          
-          
-          
-          
+          }
+          this.lignesRdy=true;
+
         },
        
         
